@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .border-border {
+    border-width: 1px; /* Define your custom styles here */
+    border-color: #cccccc00; /* Example color */
+  }
+}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-[#E9E9E6] via-white to-accent-50 dark:from-[#0C3C54] dark:via-slate-900 dark:to-black;
+    @apply text-slate-900 dark:text-[#E9E9E6];
+    @apply font-sans antialiased;
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+
+  /* Glassmorphism utilities */
+  .glass {
+    @apply bg-white/20 dark:bg-white/5;
+    @apply backdrop-blur-md;
+    @apply border border-white/30 dark:border-white/10;
+    @apply shadow-glass dark:shadow-glass-dark;
+  }
+
+  .glass-strong {
+    @apply bg-white/30 dark:bg-white/10;
+    @apply backdrop-blur-lg;
+    @apply border border-white/40 dark:border-white/20;
+    @apply shadow-glass dark:shadow-glass-dark;
+  }
+
+  .organic-shape {
+    @apply rounded-organic;
+    @apply shadow-organic hover:shadow-organic-hover;
+    @apply transition-all duration-500 ease-out;
+  }
+
+  .organic-shape-2 {
+    @apply rounded-organic-2;
+    @apply shadow-organic hover:shadow-organic-hover;
+    @apply transition-all duration-500 ease-out;
+  }
+
+  .organic-shape-3 {
+    @apply rounded-organic-3;
+    @apply shadow-organic hover:shadow-organic-hover;
+    @apply transition-all duration-500 ease-out;
+  }
+.organic-shape-4 {
+  /* Since this needs to be squared, do not apply any corner rounding */
+  @apply shadow-organic hover:shadow-organic-hover;
+  @apply transition-all duration-500 ease-out;
+}
+  /* Floating background elements */
+  .bg-blob {
+    @apply absolute opacity-50 dark:opacity-30;
+    @apply animate-blob;
+    @apply pointer-events-none;
+  }
+
+  .bg-blob-1 {
+    @apply bg-gradient-to-r from-[#20B520] to-brand-green;
+    @apply w-72 h-72 rounded-full;
+    @apply top-20 -left-4;
+    animation-delay: 0s;
+  }
+
+  .bg-blob-2 {
+    @apply bg-gradient-to-r from-[#3A9FE0] to-[#3A9FE0];
+    @apply w-72 h-72 rounded-full;
+    @apply top-0 -right-4;
+    animation-delay: 2s;
+  }
+
+  .bg-blob-3 {
+    @apply bg-gradient-to-r from-[#3A9FE0] to-[#3A9FE0];
+    @apply w-72 h-72 rounded-full;
+    @apply -bottom-32 left-20;
+    animation-delay: 4s;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-blue/30 dark:bg-brand-teal/30;
+    @apply rounded-full;
+    @apply border-2 border-transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-brand-blue/50 dark:bg-brand-teal/50;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply glass-strong;
+    @apply px-6 py-3 rounded-2xl;
+    @apply text-brand-navy dark:text-[#E9E9E6] font-medium;
+    @apply hover:bg-brand-blue/20 dark:hover:bg-brand-teal/20;
+    @apply active:scale-95;
+    @apply transition-all duration-300 ease-out;
+    @apply relative overflow-hidden;
+  }
+
+  .btn-primary::before {
+    content: '';
+    @apply absolute inset-0;
+    @apply bg-gradient-to-r from-brand-blue/10 to-brand-green/10;
+    @apply opacity-0 hover:opacity-100;
+    @apply transition-opacity duration-300;
+  }
+
+  .btn-secondary {
+    @apply glass;
+    @apply px-6 py-3 rounded-2xl;
+    @apply text-slate-700 dark:text-slate-300 font-medium;
+    @apply hover:bg-white/30 dark:hover:bg-white/10;
+    @apply active:scale-95;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card {
+    @apply glass;
+    @apply p-6 rounded-3xl;
+    @apply hover:bg-white/30 dark:hover:bg-white/10;
+    @apply transition-all duration-500 ease-out;
+    @apply relative overflow-hidden;
+  }
+
+  .card-organic {
+    @apply glass organic-shape-4;
+    @apply p-6;
+    @apply hover:bg-white/30 dark:hover:bg-white/10;
+    @apply transition-all duration-500 ease-out;
+    @apply relative overflow-hidden;
+  }
+
+  .input-glass {
+    @apply glass;
+    @apply px-4 py-3 rounded-2xl;
+    @apply text-slate-900 dark:text-[#E9E9E6];
+    @apply placeholder-slate-500 dark:placeholder-slate-400;
+    @apply focus:bg-white/40 dark:focus:bg-white/15;
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-blue/50;
+    @apply transition-all duration-300;
+  }
+
+  .header-glass {
+    @apply glass-strong;
+    @apply backdrop-blur-xl;
+    @apply border-b border-white/20 dark:border-white/10;
+  }
+}
