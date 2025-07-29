@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { AuthState } from '../types';
+import { AuthState, AdecashUser } from '../types';
 import { apiClient } from '../lib/api';
+import { JWTManager } from '../lib/jwt';
 
 interface AuthStore extends AuthState {
-  setToken: (token: string) => void;
-  setTableId: (tableId: string) => void;
-  validateToken: (token: string) => Promise<boolean>;
+  setAdecashToken: (token: string) => void;
+  setUser: (user: AdecashUser) => void;
+  validateAdecashToken: (token: string) => Promise<boolean>;
+  updateCreditLine: (remaining: number) => void;
   logout: () => void;
   setError: (error: string | null) => void;
   setValidating: (isValidating: boolean) => void;
@@ -17,34 +19,68 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       isAuthenticated: false,
       token: null,
+      coreToken: null,
       isValidating: false,
       error: null,
-      tableId: null,
+      user: null,
 
-      setToken: (token: string) => {
-        apiClient.setToken(token);
-        set({ token, isAuthenticated: true });
+      setAdecashToken: (token: string) => {
+        set({ token });
       },
 
-      setTableId: (tableId: string) => {
-        set({ tableId });
+      setUser: (user: AdecashUser) => {
+        const coreToken = JWTManager.generateCoreToken(user);
+        apiClient.setToken(coreToken);
+        set({ user, coreToken, isAuthenticated: true });
       },
 
-      validateToken: async (token: string) => {
+      validateAdecashToken: async (token: string) => {
         set({ isValidating: true, error: null });
         
-        console.log('Starting token validation for:', token.substring(0, 20) + '...');
+        console.log('Starting Adecash token validation...');
         
         try {
-          apiClient.setToken(token);
+          // Check if token is expired
+          if (JWTManager.isTokenExpired(token)) {
+            set({ 
+              token: null, 
+              user: null,
+              coreToken: null,
+              isAuthenticated: false, 
+              isValidating: false,
+              error: 'Token expirado' 
+            });
+            return false;
+          }
+
+          // Decode Adecash token
+          const user = JWTManager.decodeAdecashToken(token);
+          
+          if (!user) {
+            set({ 
+              token: null, 
+              user: null,
+              coreToken: null,
+              isAuthenticated: false, 
+              isValidating: false,
+              error: 'Token de Adecash inválido' 
+            });
+            return false;
+          }
+
+          // Generate core token and validate with API
+          const coreToken = JWTManager.generateCoreToken(user);
+          apiClient.setToken(coreToken);
           
           const isValid = await apiClient.validateJWT();
           
-          console.log('Token validation result:', isValid);
+          console.log('Core token validation result:', isValid);
           
           if (isValid === true) {
             set({ 
               token, 
+              user,
+              coreToken,
               isAuthenticated: true, 
               isValidating: false,
               error: null 
@@ -53,9 +89,11 @@ export const useAuthStore = create<AuthStore>()(
           } else {
             set({ 
               token: null, 
+              user: null,
+              coreToken: null,
               isAuthenticated: false, 
               isValidating: false,
-              error: 'Token inválido o expirado' 
+              error: 'Error de validación con el servidor' 
             });
             return false;
           }
@@ -63,6 +101,8 @@ export const useAuthStore = create<AuthStore>()(
           console.error('Token validation error:', error);
           set({ 
             token: null, 
+            user: null,
+            coreToken: null,
             isAuthenticated: false, 
             isValidating: false,
             error: 'Error de conexión con el servidor' 
@@ -71,11 +111,23 @@ export const useAuthStore = create<AuthStore>()(
         }
       },
 
+      updateCreditLine: (remaining: number) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({
+            user: {
+              ...currentUser,
+              remaining_credit_line: remaining
+            }
+          });
+        }
+      },
       logout: () => {
         set({ 
           isAuthenticated: false, 
           token: null, 
-          tableId: null,
+          user: null,
+          coreToken: null,
           error: null 
         });
       },
@@ -92,7 +144,8 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       partialize: (state) => ({ 
         token: state.token, 
-        tableId: state.tableId 
+        user: state.user,
+        coreToken: state.coreToken
       }),
     }
   )

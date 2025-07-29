@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { ProductCard } from '../components/ProductCard';
 import { OfferCard } from '../components/OfferCard';
+import { CreditLineIndicator } from '../components/CreditLineIndicator';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useCartStore } from '../stores/useCartStore';
@@ -10,10 +11,9 @@ import { apiClient } from '../lib/api';
 import { Product, MenuCategory, Menu, Offer } from '../types';
 
 export function MenuPage() {
-  const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
-  const { getTotal, getItemCount } = useCartStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { getTotal, getItemCount, getCreditLineStatus } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menus, setMenus] = useState<Menu[]>([]);
@@ -23,12 +23,12 @@ export function MenuPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate(`/loading/${tableId}`);
+      navigate('/loading');
       return;
     }
 
     loadData();
-  }, [isAuthenticated, tableId, navigate]);
+  }, [isAuthenticated, navigate]);
 
   const loadData = async () => {
     try {
@@ -58,6 +58,10 @@ export function MenuPage() {
   const cartTotal = getTotal();
   const cartItemCount = getItemCount();
 
+  // Calculate credit line status
+  const creditStatus = user ? getCreditLineStatus(user.max_credit_line, user.remaining_credit_line) : null;
+  const isOverCreditLimit = creditStatus ? (creditStatus.used_credit_line + cartTotal) > creditStatus.max_credit_line : false;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#264252]">
@@ -70,6 +74,18 @@ export function MenuPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#264252] pb-20">
       <Header title="Menú" showBack showCart />
+
+      {/* Credit Line Indicator */}
+      {user && creditStatus && (
+        <div className="p-4 pb-0">
+          <CreditLineIndicator 
+            creditStatus={creditStatus}
+            currentCartTotal={cartTotal}
+            size="md"
+            showDetails={true}
+          />
+        </div>
+      )}
 
       {/* Category Tabs */}
       <div className="bg-white dark:bg-[#3C647C] p-4 shadow-sm">
@@ -129,11 +145,18 @@ export function MenuPage() {
       {cartItemCount > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-[#80D580]-500 to-[#80D580]-600 shadow-lg p-4">
           <button
-            onClick={() => navigate(`/cart/${tableId}`)}
-            className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-between px-6 shadow-lg border border-white/20"
+            onClick={() => navigate('/cart')}
+            disabled={isOverCreditLimit}
+            className={`w-full backdrop-blur-sm text-white py-4 rounded-xl font-medium transition-all duration-200 flex items-center justify-between px-6 shadow-lg border border-white/20 ${
+              isOverCreditLimit 
+                ? 'bg-red-500/20 hover:bg-red-500/30 cursor-not-allowed' 
+                : 'bg-white/10 hover:bg-white/20'
+            }`}
           >
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                isOverCreditLimit ? 'bg-red-500/30' : 'bg-white/20'
+              }`}>
                 <span className="text-sm font-bold">{cartItemCount}</span>
               </div>
               <span className="text-sm">
@@ -142,8 +165,12 @@ export function MenuPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold">Ver Carrito</span>
-              <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              <span className="text-lg font-semibold">
+                {isOverCreditLimit ? 'Límite Excedido' : 'Ver Carrito'}
+              </span>
+              {!isOverCreditLimit && (
+                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              )}
             </div>
             
             <div className="text-right">
@@ -151,6 +178,14 @@ export function MenuPage() {
               <div className="text-lg font-bold">${cartTotal.toFixed(2)}</div>
             </div>
           </button>
+          
+          {isOverCreditLimit && (
+            <div className="mt-2 text-center">
+              <p className="text-xs text-white/80">
+                Reduce el monto del carrito o selecciona otro método de pago
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -1,19 +1,19 @@
 import React from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
-import { useCartStore } from '../stores/useCartStore';
 import { useThemeStore } from '../stores/useThemeStore';
+import { useAuthStore } from '../stores/useAuthStore';
 
 export function ConfirmationPage() {
-  const { tableId } = useParams<{ tableId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const { isDark, toggleTheme } = useThemeStore();
+  const { user } = useAuthStore();
 
-  const { orderNumber, orderId, total, paymentMethod } = location.state || {};
+  const { orderNumber, takeAwayCode, total, paymentMethod, userName } = location.state || {};
 
   const handleBackToHome = () => {
-    navigate(`/dashboard/${tableId}`);
+    navigate('/dashboard');
   };
 
   return (
@@ -39,26 +39,47 @@ export function ConfirmationPage() {
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Número de Orden:</span>
               <span className="font-semibold text-gray-900 dark:text-white">
-                #{orderNumber || '1234'}
+                #{orderNumber || 'N/A'}
+              </span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-gray-600 dark:text-gray-400">Código de Retiro:</span>
+              <span className="font-bold text-2xl text-[#80D580]-600 dark:text-[#80D580]-400">
+                {takeAwayCode || `${user?.first_name} ${user?.last_name}`}
               </span>
             </div>
             
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">Total:</span>
               <span className="font-semibold text-gray-900 dark:text-white">
-                ${total?.toFixed(2) || '0.00'}
+                {total ? total.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' }) : '$0.00'}
               </span>
             </div>
             
-            {orderId && (
+            {paymentMethod && (
               <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400">ID de Orden:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {orderId}
+                <span className="text-gray-600 dark:text-gray-400">Método de Pago:</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {paymentMethod === 'credit' ? 'Línea de Crédito' : 
+                   paymentMethod === 'mercado_pago' ? 'Mercado Pago' : 'Efectivo'}
                 </span>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Pickup Instructions */}
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+            📋 Instrucciones de Retiro
+          </h4>
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            {takeAwayCode 
+              ? `Presenta el código "${takeAwayCode}" en el mostrador para retirar tu pedido.`
+              : `Presenta tu identificación con el nombre "${userName || `${user?.first_name} ${user?.last_name}`}" para retirar tu pedido.`
+            }
+          </p>
         </div>
 
         {/* Status */}

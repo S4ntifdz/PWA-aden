@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { OffersCarousel } from '../components/OffersCarousel';
+import { CreditLineIndicator } from '../components/CreditLineIndicator';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useCartStore } from '../stores/useCartStore';
 import { apiClient } from '../lib/api';
 import { UnpaidOrdersResponse, Offer } from '../types';
 import { Plus, CreditCard, Phone, X } from 'lucide-react';
 
 export function DashboardPage() {
-  const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { getCreditLineStatus, getTotal } = useCartStore();
   const [unpaidOrders, setUnpaidOrders] = useState<UnpaidOrdersResponse | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,12 +27,12 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigate(`/loading/${tableId}`);
+      navigate('/loading');
       return;
     }
 
     // Check if we just created an order
-    if (location.state?.orderCreated) {
+    if (location.state?.orderNumber) {
       setShowOrderSuccess(true);
       // Clear the state to prevent showing again on refresh
       window.history.replaceState({}, document.title);
@@ -39,10 +41,10 @@ export function DashboardPage() {
     }
 
     loadData();
-  }, [isAuthenticated, tableId, navigate, location.state]);
+  }, [isAuthenticated, navigate, location.state]);
 
   const loadData = async () => {
-    if (!tableId) return;
+    if (!user) return;
 
     try {
       setLoading(true);
@@ -50,7 +52,7 @@ export function DashboardPage() {
       
       // Load unpaid orders and offers
       const [unpaidOrdersData, offersData] = await Promise.all([
-        apiClient.getUnpaidOrders(tableId),
+        apiClient.getUnpaidOrders(user.curp),
         apiClient.getOffers()
       ]);
       
@@ -70,10 +72,10 @@ export function DashboardPage() {
   };
 
   const confirmCallWaiter = async () => {
-    if (!tableId) return;
+    if (!user) return;
     
     try {
-      const response = await apiClient.callWaiter(tableId);
+      const response = await apiClient.callWaiter(user.curp);
       if (response.calling) {
         setWaiterCalled(true);
         setShowWaiterModal(false);
@@ -86,10 +88,10 @@ export function DashboardPage() {
   };
 
   const handleCancelWaiter = async () => {
-    if (!tableId) return;
+    if (!user) return;
     
     try {
-      await apiClient.cancelWaiterCall(tableId);
+      await apiClient.cancelWaiterCall(user.curp);
       setWaiterCalled(false);
       setShowCancelWaiterModal(false);
     } catch (error) {
@@ -107,6 +109,10 @@ export function DashboardPage() {
     };
     return statusMap[status] || status;
   };
+
+  // Calculate credit line status
+  const cartTotal = getTotal();
+  const creditStatus = user ? getCreditLineStatus(user.max_credit_line, user.remaining_credit_line) : null;
 
   if (loading) {
     return (
@@ -139,14 +145,22 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen">
       <Header
-        title={`Mesa ${unpaidOrders?.table_number || '?'}`}
-        tableNumber={unpaidOrders?.table_number}
-        tableStatus="Ocupada"
+        title={`Hola, ${user?.first_name || 'Usuario'}`}
         showCallWaiter
         onCallWaiter={handleCallWaiter}
       />
 
       <div className="p-6 space-y-8">
+        {/* Credit Line Status */}
+        {user && creditStatus && (
+          <CreditLineIndicator 
+            creditStatus={creditStatus}
+            currentCartTotal={cartTotal}
+            size="lg"
+            showDetails={true}
+          />
+        )}
+
         {/* Order Success Message */}
         {showOrderSuccess && (
           <div className="card-organic bg-gradient-to-r from-brand-green/10 to-brand-blue/10 border-2 border-brand-green/30 dark:border-brand-teal/30">
@@ -161,6 +175,7 @@ export function DashboardPage() {
                 <p className="text-slate-600 dark:text-slate-400 text-sm">
                   Tu pedido ha sido enviado a la cocina
                   {location.state?.orderNumber && ` - Orden #${location.state.orderNumber}`}
+                  {location.state?.takeAwayCode && ` - Código: ${location.state.takeAwayCode}`}
                 </p>
               </div>
             </div>
@@ -280,7 +295,7 @@ export function DashboardPage() {
         {/* Action Buttons */}
         <div className="flex gap-6">
           <button
-            onClick={() => navigate(`/menu/${tableId}`)}
+            onClick={() => navigate('/menu')}
             className="flex-1 btn-secondary py-4 flex items-center justify-center gap-3 text-lg"
           >
             <Plus className="w-5 h-5" />
@@ -289,7 +304,7 @@ export function DashboardPage() {
           
           {unpaidOrders && unpaidOrders.total_amount_owed > 0 && (
             <button
-              onClick={() => navigate(`/payment/${tableId}`, { 
+              onClick={() => navigate('/payment', { 
                 state: { unpaidOrders } 
               })}
               className="flex-1 btn-primary py-4 flex items-center justify-center gap-3 text-lg bg-gradient-to-r from-brand-green/20 to-brand-blue/20 hover:from-brand-green/30 hover:to-brand-blue/30"

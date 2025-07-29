@@ -69,7 +69,28 @@ export interface AuthState {
   token: string | null;
   isValidating: boolean;
   error: string | null;
-  tableId: string | null;
+  user: AdecashUser | null;
+  coreToken: string | null;
+}
+
+export interface AdecashUser {
+  first_name: string;
+  last_name: string;
+  curp: string;
+  contractor: string;
+  email: string;
+  company: string;
+  max_credit_line: number;
+  remaining_credit_line: number;
+  ademozo_tenant_name: string;
+  ademozo_tenant: string;
+}
+
+export interface CoreTokenPayload {
+  first_name: string;
+  last_name: string;
+  curp: string;
+  tenant: string;
 }
 
 export interface PaymentMethod {
@@ -77,6 +98,13 @@ export interface PaymentMethod {
   name: string;
   icon: string;
   type: 'credit_card' | 'transfer' | 'cash';
+}
+
+export interface CreditLineStatus {
+  max_credit_line: number;
+  remaining_credit_line: number;
+  used_credit_line: number;
+  percentage_used: number;
 }
 
 export interface Offer {
@@ -100,9 +128,13 @@ export interface Menu {
 }
 
 export interface UnpaidOrdersResponse {
-  table_uuid: string;
-  table_number: number;
+  user_curp: string;
+  user_name: string;
   orders: Order[];
   total_amount_owed: number;
   unpaid_orders_count: number;
+}
+
+export interface OrderResponse extends Order {
+  order_take_away_code?: string;
 }

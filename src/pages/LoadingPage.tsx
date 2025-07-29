@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -7,8 +7,7 @@ import { useTokenFromUrl } from '../hooks/useTokenFromUrl';
 
 export function LoadingPage() {
   const navigate = useNavigate();
-  const { tableId } = useParams<{ tableId: string }>();
-  const { validateToken, isValidating, error, setTableId } = useAuthStore();
+  const { validateAdecashToken, isValidating, error, setAdecashToken, setUser } = useAuthStore();
   const token = useTokenFromUrl();
 
   useEffect(() => {
@@ -16,37 +15,28 @@ export function LoadingPage() {
       if (!token) {
         navigate('/error', { 
           state: { 
-            error: 'No se encontró token de acceso en la URL' 
+            error: 'No se encontró token de Adecash en la URL' 
           } 
         });
         return;
       }
 
-      if (!tableId) {
-        navigate('/error', { 
-          state: { 
-            error: 'ID de mesa no válido' 
-          } 
-        });
-        return;
-      }
-
-      setTableId(tableId);
-      const isValid = await validateToken(token);
+      setAdecashToken(token);
+      const isValid = await validateAdecashToken(token);
       
       if (isValid) {
-        navigate(`/dashboard/${tableId}`, { replace: true });
+        navigate('/dashboard', { replace: true });
       } else {
         navigate('/error', { 
           state: { 
-            error: 'Acceso no autorizado. Token inválido o expirado.' 
+            error: 'Acceso no autorizado. Token de Adecash inválido o expirado.' 
           } 
         });
       }
     };
 
     handleAuth();
-  }, [token, tableId, validateToken, navigate, setTableId]);
+  }, [token, validateAdecashToken, navigate, setAdecashToken, setUser]);
 
   if (error) {
     return (
@@ -70,7 +60,7 @@ export function LoadingPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#264252] flex items-center justify-center">
       <LoadingSpinner 
-        message="Validando acceso..." 
+        message="Validando acceso de Adecash..." 
         size="lg"
       />
     </div>

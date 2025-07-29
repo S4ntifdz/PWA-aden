@@ -44,8 +44,8 @@ function App() {
         {/* Main content */}
         <div className="relative z-10">
         <Routes>
-          {/* Loading/Auth Route */}
-          <Route path="/loading/:tableId" element={<LoadingPage />} />
+          {/* Loading/Auth Routes */}
+          <Route path="/loading" element={<LoadingPage />} />
           
           {/* JWT Token Route - for URLs like /jwt-token */}
           <Route path="/:token" element={<JWTTokenPage />} />
@@ -55,7 +55,7 @@ function App() {
           
           {/* Protected Routes */}
           <Route 
-            path="/dashboard/:tableId" 
+            path="/dashboard" 
             element={
               <ProtectedRoute>
                 <DashboardPage />
@@ -64,7 +64,7 @@ function App() {
           />
           
           <Route 
-            path="/menu/:tableId" 
+            path="/menu" 
             element={
               <ProtectedRoute>
                 <MenuPage />
@@ -73,7 +73,7 @@ function App() {
           />
           
           <Route 
-            path="/cart/:tableId" 
+            path="/cart" 
             element={
               <ProtectedRoute>
                 <CartPage />
@@ -82,7 +82,7 @@ function App() {
           />
           
           <Route 
-            path="/order-confirmation/:tableId" 
+            path="/order-confirmation" 
             element={
               <ProtectedRoute>
                 <OrderConfirmationPage />
@@ -91,7 +91,7 @@ function App() {
           />
           
           <Route 
-            path="/payment/:tableId" 
+            path="/payment" 
             element={
               <ProtectedRoute>
                 <PaymentPage />
@@ -100,7 +100,7 @@ function App() {
           />
           
           <Route 
-            path="/confirmation/:tableId" 
+            path="/confirmation" 
             element={
               <ProtectedRoute>
                 <ConfirmationPage />
@@ -109,7 +109,7 @@ function App() {
           />
           
           {/* Redirect root to loading with a sample table ID */}
-          <Route path="/" element={<Navigate to="/loading/sample-table-id" replace />} />
+          <Route path="/" element={<Navigate to="/loading" replace />} />
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/error" replace />} />

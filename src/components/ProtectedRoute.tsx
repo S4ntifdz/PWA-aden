@@ -4,14 +4,13 @@ import { useAuthStore } from '../stores/useAuthStore';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  tableId?: string;
 }
 
-export function ProtectedRoute({ children, tableId }: ProtectedRouteProps) {
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated) {
-    return <Navigate to={`/loading/${tableId}`} replace />;
+    return <Navigate to="/loading" replace />;
   }
 
   return <>{children}</>;

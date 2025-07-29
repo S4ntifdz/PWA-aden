@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { useAuthStore } from '../stores/useAuthStore';
+import { JWTManager } from '../lib/jwt';
 
 export function JWTTokenPage() {
   const navigate = useNavigate();
   const { token } = useParams<{ token: string }>();
-  const { validateToken, isValidating, error, setTableId } = useAuthStore();
+  const { validateAdecashToken, isValidating, error, setUser, setAdecashToken } = useAuthStore();
 
   useEffect(() => {
     const handleAuth = async () => {
@@ -15,61 +16,59 @@ export function JWTTokenPage() {
         console.log('No token found in URL');
         navigate('/error', { 
           state: { 
-            error: 'No se encontró token de acceso en la URL' 
+            error: 'No se encontró token de Adecash en la URL' 
           } 
         });
         return;
       }
 
-      console.log('Token from URL:', token);
+      console.log('Adecash token from URL:', token.substring(0, 20) + '...');
       
       try {
-        // Decode JWT to extract table_uuid
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('JWT Payload:', payload);
+        // Decode Adecash JWT to extract user data
+        const user = JWTManager.decodeAdecashToken(token);
         
-        const tableId = payload.table_uuid;
-        
-        if (!tableId) {
-          console.log('No table_uuid found in JWT payload');
+        if (!user) {
+          console.log('Invalid Adecash token payload');
           navigate('/error', { 
             state: { 
-              error: 'Token JWT no contiene información de mesa válida' 
+              error: 'Token de Adecash no contiene información de usuario válida' 
             } 
           });
           return;
         }
 
-        console.log('Setting table ID:', tableId);
-        setTableId(tableId);
+        console.log('Setting user data:', user.first_name, user.last_name);
+        setAdecashToken(token);
+        setUser(user);
         
         console.log('Starting token validation...');
-        const isValid = await validateToken(token);
+        const isValid = await validateAdecashToken(token);
         console.log('Token validation completed. Is valid:', isValid);
         
         if (isValid) {
           console.log('Redirecting to dashboard...');
-          navigate(`/dashboard/${tableId}`, { replace: true });
+          navigate('/dashboard', { replace: true });
         } else {
           console.log('Token validation failed, redirecting to error');
           navigate('/error', { 
             state: { 
-              error: 'Acceso no autorizado. Token inválido o expirado.' 
+              error: 'Acceso no autorizado. Token de Adecash inválido o expirado.' 
             } 
           });
         }
       } catch (decodeError) {
-        console.error('Error decoding JWT:', decodeError);
+        console.error('Error decoding Adecash JWT:', decodeError);
         navigate('/error', { 
           state: { 
-            error: 'Token JWT malformado o inválido' 
+            error: 'Token de Adecash malformado o inválido' 
           } 
         });
       }
     };
 
     handleAuth();
-  }, [token, validateToken, navigate, setTableId]);
+  }, [token, validateAdecashToken, navigate, setUser, setAdecashToken]);
 
   if (error) {
     return (
@@ -93,7 +92,7 @@ export function JWTTokenPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#264252] flex items-center justify-center">
       <LoadingSpinner 
-        message="Validando acceso..." 
+        message="Validando acceso de Adecash..." 
         size="lg"
       />
     </div>

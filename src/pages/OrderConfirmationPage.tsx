@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { useCartStore } from '../stores/useCartStore';
 import { useAuthStore } from '../stores/useAuthStore';
@@ -7,10 +7,9 @@ import { apiClient } from '../lib/api';
 import { X } from 'lucide-react';
 
 export function OrderConfirmationPage() {
-  const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
-  const { items, offers, notes, getTotal, clearCart } = useCartStore();
-  const { tableId: authTableId } = useAuthStore();
+  const { items, offers, notes, paymentMethod, getTotal, clearCart } = useCartStore();
+  const { user } = useAuthStore();
   const [processing, setProcessing] = useState(false);
 
   const total = getTotal();
@@ -18,14 +17,16 @@ export function OrderConfirmationPage() {
                      offers.reduce((sum, item) => sum + item.quantity, 0);
 
   const handleConfirmOrder = async () => {
-    if (!tableId || (items.length === 0 && offers.length === 0)) return;
+    if (!user || (items.length === 0 && offers.length === 0)) return;
     
     setProcessing(true);
     
     try {
       // Create order with API
       const orderData = {
-        table: tableId,
+        user_curp: user.curp,
+        tenant: user.ademozo_tenant,
+        payment_method: paymentMethod,
         order_products: items.map(item => ({
           product: item.product.uuid,
           quantity: item.quantity
@@ -44,12 +45,15 @@ export function OrderConfirmationPage() {
       // Clear cart after successful order
       clearCart();
       
-      // Navigate back to dashboard with success message
-      navigate(`/dashboard/${tableId}`, {
+      // Navigate to confirmation page with order details
+      navigate('/confirmation', {
         replace: true,
         state: {
-          orderCreated: true,
-          orderNumber: response.order_number
+          orderNumber: response.order_number,
+          takeAwayCode: response.order_take_away_code,
+          total: total,
+          paymentMethod: paymentMethod,
+          userName: `${user.first_name} ${user.last_name}`
         }
       });
       
@@ -62,11 +66,11 @@ export function OrderConfirmationPage() {
   };
 
   const handleCancel = () => {
-    navigate(`/cart/${tableId}`);
+    navigate('/cart');
   };
 
   if (items.length === 0 && offers.length === 0) {
-    navigate(`/menu/${tableId}`);
+    navigate('/menu');
     return null;
   }
 
@@ -107,7 +111,7 @@ export function OrderConfirmationPage() {
                     {item.quantity}x {item.product.name}
                   </span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    ${(item.product.price * item.quantity).toFixed(2)}
+                    {(item.product.price * item.quantity).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                   </span>
                 </div>
               ))}
@@ -117,7 +121,7 @@ export function OrderConfirmationPage() {
                     {item.quantity}x {item.offer.name} 🎉
                   </span>
                   <span className="font-medium text-[#80D580]-900 dark:text-[#80D580]-100">
-                    ${(item.offer.price * item.quantity).toFixed(2)}
+                    {(item.offer.price * item.quantity).toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                   </span>
                 </div>
               ))}
@@ -130,9 +134,20 @@ export function OrderConfirmationPage() {
                   Total
                 </span>
                 <span className="font-bold text-xl text-gray-900 dark:text-white">
-                  ${total.toFixed(2)}
+                  {total.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' })}
                 </span>
               </div>
+            </div>
+
+            {/* Payment Method */}
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-1">
+                Método de pago:
+              </p>
+              <p className="text-blue-900 dark:text-blue-100 font-medium">
+                {paymentMethod === 'credit' ? 'Línea de Crédito Adecash' : 
+                 paymentMethod === 'mercado_pago' ? 'Mercado Pago' : 'Efectivo'}
+              </p>
             </div>
 
             {/* Notes */}

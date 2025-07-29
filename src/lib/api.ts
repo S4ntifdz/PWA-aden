@@ -150,15 +150,15 @@ export class ApiClient {
     return this.request('/orders/');
   }
 
-  async createOrder(order: any) {
-    return this.request('/orders/', {
+  async createOrder(order: any): Promise<{order_number: string, order_take_away_code?: string}> {
+    return this.request<{order_number: string, order_take_away_code?: string}>('/orders/', {
       method: 'POST',
       body: JSON.stringify(order),
     });
   }
 
   // Payments
-  async createPayment(payment: { method: string; amount: string }) {
+  async createPayment(payment: { method: string; amount: string; payment_type?: 'credit' | 'mercado_pago' | 'cash' }) {
     return this.request('/payments/', {
       method: 'POST',
       body: JSON.stringify(payment),
@@ -168,6 +168,14 @@ export class ApiClient {
   // Offers
   async getOffers() {
     return this.request('/offers/');
+  }
+
+  // Credit Line
+  async updateCreditLine(curp: string, amount: number) {
+    return this.request(`/users/${curp}/credit-line/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ remaining_credit_line: amount }),
+    });
   }
 }
 

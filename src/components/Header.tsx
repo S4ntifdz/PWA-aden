@@ -10,8 +10,6 @@ interface HeaderProps {
   showCart?: boolean;
   showThemeToggle?: boolean;
   showCallWaiter?: boolean;
-  tableNumber?: number;
-  tableStatus?: string;
   onCallWaiter?: () => void;
 }
 
@@ -21,8 +19,6 @@ export function Header({
   showCart = false,
   showThemeToggle = true,
   showCallWaiter = false,
-  tableNumber,
-  tableStatus,
   onCallWaiter,
 }: HeaderProps) {
   const navigate = useNavigate();
@@ -47,11 +43,6 @@ export function Header({
         
         <div>
           <h1 className="font-bold text-xl bg-gradient-to-r from-brand-navy to-brand-blue dark:from-cream dark:to-brand-teal bg-clip-text text-[#DAAD29]">{title}</h1>
-          {tableNumber && (
-            <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
-              Mesa {tableNumber} • {tableStatus || 'Ocupada'}
-            </p>
-          )}
         </div>
       </div>
 
@@ -68,7 +59,7 @@ export function Header({
 
         {showCart && (
           <button
-            onClick={() => navigate(`/cart/${window.location.pathname.split('/')[2]}`)}
+            onClick={() => navigate('/cart')}
             className="relative p-2 glass rounded-xl hover:bg-white/30 dark:hover:bg-white/10 transition-all duration-300 active:scale-95"
           >
             <ShoppingCart className="w-5 h-5" />
